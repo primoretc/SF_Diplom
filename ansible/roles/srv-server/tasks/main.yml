@@ -1,0 +1,57 @@
+---
+- name: Install Docker
+  include_role:
+    name: common
+    tasks_from: install_docker.yml
+
+- name: Install Docker Compose
+  get_url:
+    url: https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+
+- name: Create directories for tools
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+  with_items:
+    - /opt/tools
+    - /opt/tools/monitoring
+    - /opt/tools/logging
+    - /opt/tools/ci-cd
+
+- name: Deploy monitoring stack (Prometheus + Grafana)
+  copy:
+    src: files/monitoring/docker-compose.yml
+    dest: /opt/tools/monitoring/docker-compose.yml
+
+- name: Deploy logging stack (Loki + Promtail)
+  copy:
+    src: files/logging/docker-compose.yml
+    dest: /opt/tools/logging/docker-compose.yml
+
+- name: Deploy GitLab Runner
+  copy:
+    src: files/ci-cd/gitlab-runner-config.toml
+    dest: /opt/tools/ci-cd/config.toml
+
+- name: Start monitoring stack
+  command: docker-compose up -d
+  args:
+    chdir: /opt/tools/monitoring
+  become: yes
+
+- name: Start logging stack
+  command: docker-compose up -d
+  args:
+    chdir: /opt/tools/logging
+  become: yes
+
+- name: Install and configure GitLab Runner
+  shell: |
+    curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | bash
+    apt-get install gitlab-runner
+    usermod -aG docker gitlab-runner
+  become: yes

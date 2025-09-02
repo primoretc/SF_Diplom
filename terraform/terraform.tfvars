@@ -1,0 +1,6 @@
+yc_token        = "your_oauth_token"
+yc_cloud_id     = "your_cloud_id"
+yc_folder_id    = "your_folder_id"
+yc_access_key   = "your_access_key"
+yc_secret_key   = "your_secret_key"
+ssh_public_key  = "ssh-rsa AAAAB3NzaC1yc2E..."

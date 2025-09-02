@@ -1,0 +1,43 @@
+---
+- name: Setup common configuration on all servers
+  hosts: all
+  roles:
+    - common
+
+- name: Setup Kubernetes cluster
+  hosts: k8s_cluster
+  roles:
+    - kubernetes
+
+- name: Initialize Kubernetes master
+  hosts: k8s_master
+  roles:
+    - role: kubernetes
+      tasks_from: master.yml
+
+- name: Join worker nodes to cluster
+  hosts: k8s_workers
+  tasks:
+    - name: Copy join command from master
+      synchronize:
+        src: /tmp/join-command.sh
+        dest: /tmp/join-command.sh
+        mode: pull
+      delegate_to: "{{ groups['k8s_master'][0] }}"
+
+    - name: Join worker to cluster
+      command: bash /tmp/join-command.sh
+      become: yes
+
+- name: Setup SRV server
+  hosts: srv_servers
+  roles:
+    - srv-server
+
+- name: Deploy monitoring to Kubernetes
+  hosts: k8s_master
+  tasks:
+    - name: Deploy Kubernetes dashboard
+      command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf

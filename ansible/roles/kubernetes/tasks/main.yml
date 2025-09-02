@@ -1,0 +1,44 @@
+---
+- name: Install Docker
+  include_role:
+    name: common
+    tasks_from: install_docker.yml
+
+- name: Disable swap
+  command: swapoff -a
+  changed_when: false
+
+- name: Comment swap in /etc/fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+- name: Add Kubernetes apt repository
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add Kubernetes repository
+  apt_repository:
+    repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+    state: present
+    filename: kubernetes
+
+- name: Install Kubernetes components
+  apt:
+    name:
+      - kubelet={{ kubelet_version }}
+      - kubeadm={{ kubeadm_version }}
+      - kubectl={{ kubectl_version }}
+    state: present
+    force: yes
+
+- name: Hold Kubernetes packages at current version
+  command: apt-mark hold kubelet kubeadm kubectl
+
+- name: Enable kubelet service
+  systemd:
+    name: kubelet
+    enabled: yes
+    daemon_reload: yes

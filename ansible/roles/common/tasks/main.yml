@@ -1,0 +1,41 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install basic packages
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - vim
+      - htop
+      - net-tools
+      - software-properties-common
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+
+- name: Configure SSH
+  copy:
+    src: ssh/
+    dest: /home/{{ system_user }}/.ssh
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+    mode: '0600'
+  when: ssh_files_exists | default(false)
+
+- name: Add SSH public keys
+  authorized_key:
+    user: "{{ system_user }}"
+    key: "{{ item }}"
+  with_file:
+    - ../files/ssh/public_keys

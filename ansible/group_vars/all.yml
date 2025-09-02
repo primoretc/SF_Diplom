@@ -1,0 +1,19 @@
+---
+# Common variables
+system_user: ubuntu
+timezone: Europe/Moscow
+
+# Docker configuration
+docker_version: "20.10"
+docker_users:
+  - "{{ system_user }}"
+
+# Kubernetes configuration
+k8s_version: "1.28"
+kubelet_version: "1.28.0-00"
+kubeadm_version: "1.28.0-00"
+kubectl_version: "1.28.0-00"
+
+# Network configuration
+pod_network_cidr: "10.244.0.0/16"
+service_cidr: "10.96.0.0/12"
