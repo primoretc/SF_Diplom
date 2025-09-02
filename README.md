@@ -22,13 +22,11 @@ yc resource-manager folder add-access-binding \
 
 # Создайте статический ключ
 yc iam access-key create --service-account-name terraform
-
-
-
+```
 ### 2. Настройка переменных
 
-# Создайте файл terraform/terraform.tfvars:
-
+#### Создайте файл terraform/terraform.tfvars:
+```bash
 hcl
 yc_token        = "your_oauth_token"
 yc_cloud_id     = "your_cloud_id"
@@ -36,31 +34,38 @@ yc_folder_id    = "your_folder_id"
 yc_access_key   = "your_access_key"
 yc_secret_key   = "your_secret_key"
 ssh_public_key  = "ssh-rsa AAAAB3NzaC1yc2E..."
-
+```
 ### 3. Развертывание инфраструктуры
 
-bash
+```bash
 cd terraform
-
-# Инициализация
+```
+#### Инициализация
+```bash
 terraform init
+```
 
-# Планирование
+#### Планирование
+```bash
 terraform plan
-
-# Применение
+```
+#### Применение
+```bash
 terraform apply
-
+```
 
 ### 4. Настройка инвентаря Ansible
 Обновите ansible/inventory/production с IP-адресами из вывода Terraform.
 
 ### 5. Запуск Ansible
-bash
+```bash
 cd ansible
-
-# Установка ролей
+```
+#### Установка ролей
+```bash
 ansible-galaxy install -r requirements.yml
-
-# Запуск плейбука
+```
+#### Запуск плейбука
+```bash
 ansible-playbook -i inventory/production playbooks/setup-infrastructure.yml
+```
