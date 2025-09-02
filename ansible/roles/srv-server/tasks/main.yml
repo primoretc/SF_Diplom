@@ -4,6 +4,9 @@
     name: common
     tasks_from: install_docker.yml
 
+- name: Install Docker Registry
+  include_tasks: docker-registry.yml    
+
 - name: Install Docker Compose
   get_url:
     url: https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64

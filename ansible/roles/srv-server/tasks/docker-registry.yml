@@ -1,0 +1,37 @@
+- name: Create directory for Docker Registry
+  file:
+    path: /opt/tools/registry
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Create Docker Registry compose file
+  copy:
+    content: |
+      version: '3.8'
+      services:
+        registry:
+          image: registry:2
+          ports:
+            - "5000:5000"
+          environment:
+            REGISTRY_HTTP_ADDR: 0.0.0.0:5000
+            REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+          volumes:
+            - ./data:/data
+          restart: unless-stopped
+    dest: /opt/tools/registry/docker-compose.yml
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Start Docker Registry
+  command: docker-compose up -d
+  args:
+    chdir: /opt/tools/registry
+  become: yes
+
+- name: Wait for registry to start
+  wait_for:
+    port: 5000
+    host: 127.0.0.1
+    timeout: 30

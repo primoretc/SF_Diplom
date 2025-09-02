@@ -1,0 +1,40 @@
+replicaCount: 1
+
+image:
+  repository: srv-tools:5000/django-app
+  pullPolicy: Always
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: django-app.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+postgresql:
+  enabled: true
+  image: postgres:13
+  database: "mydatabase"
+  username: "myuser"
+  password: "mypassword"
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "standard"
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
