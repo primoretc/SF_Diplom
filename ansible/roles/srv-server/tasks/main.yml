@@ -13,6 +13,15 @@
     dest: /usr/local/bin/docker-compose
     mode: '0755'
 
+- name: Install monitoring stack
+  include_tasks: monitoring.yml
+
+- name: Install logging stack
+  include_tasks: logging.yml
+
+- name: Install Grafana
+  include_tasks: grafana.yml
+
 - name: Create directories for tools
   file:
     path: "{{ item }}"

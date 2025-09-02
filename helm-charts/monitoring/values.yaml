@@ -1,0 +1,24 @@
+prometheus:
+  enabled: true
+  alertmanager:
+    enabled: false  # Используем Alertmanager на SRV
+  server:
+    remoteWrite:
+      - url: "http://srv-tools:9090/api/v1/write"
+
+loki:
+  enabled: true
+  config:
+    loki:
+      common:
+        replication_factor: 1
+        ring:
+          kvstore:
+            store: inmemory
+  persistence:
+    enabled: false
+
+promtail:
+  enabled: true
+  config:
+    lokiAddress: "http://srv-tools:3100/loki/api/v1/push"

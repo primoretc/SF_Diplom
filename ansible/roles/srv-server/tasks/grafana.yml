@@ -1,0 +1,60 @@
+- name: Create directories for Grafana
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+  with_items:
+    - /opt/tools/grafana
+    - /opt/tools/grafana/data
+
+- name: Create Grafana docker-compose
+  copy:
+    content: |
+      version: '3.8'
+      services:
+        grafana:
+          image: grafana/grafana:latest
+          ports:
+            - "3000:3000"
+          environment:
+            - GF_SECURITY_ADMIN_PASSWORD=admin123
+            - GF_USERS_ALLOW_SIGN_UP=false
+          volumes:
+            - ./data:/var/lib/grafana
+            - ./provisioning:/etc/grafana/provisioning
+          restart: unless-stovery
+    dest: /opt/tools/grafana/docker-compose.yml
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Create provisioning directory
+  file:
+    path: /opt/tools/grafana/provisioning
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Create datasources provisioning
+  copy:
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus:9090
+          isDefault: true
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
+    dest: /opt/tools/grafana/provisioning/datasources.yml
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Start Grafana
+  command: docker-compose up -d
+  args:
+    chdir: /opt/tools/grafana
+  become: yes

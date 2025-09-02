@@ -1,0 +1,104 @@
+- name: Create directories for Loki
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+  with_items:
+    - /opt/tools/loki
+    - /opt/tools/loki/data
+
+- name: Create Loki configuration
+  copy:
+    content: |
+      auth_enabled: false
+      server:
+        http_listen_port: 3100
+        grpc_listen_port: 9096
+      common:
+        instance_addr: 127.0.0.1
+        path_prefix: /opt/tools/loki
+        storage:
+          filesystem:
+            chunks_directory: /opt/tools/loki/data/chunks
+            rules_directory: /opt/tools/loki/data/rules
+        replication_factor: 1
+        ring:
+          kvstore:
+            store: inmemory
+      schema_config:
+        configs:
+          - from: 2020-10-24
+            store: boltdb-shipper
+            object_store: filesystem
+            schema: v11
+            index:
+              prefix: index_
+              period: 24h
+      ruler:
+        alertmanager_url: http://localhost:9093
+      analytics:
+        reporting_enabled: false
+    dest: /opt/tools/loki/loki-config.yaml
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Create Loki docker-compose
+  copy:
+    content: |
+      version: '3.8'
+      services:
+        loki:
+          image: grafana/loki:2.8.0
+          ports:
+            - "3100:3100"
+          command: -config.file=/etc/loki/local-config.yaml
+          volumes:
+            - ./loki-config.yaml:/etc/loki/local-config.yaml
+            - ./data:/data
+          restart: unless-stovery
+        promtail:
+          image: grafana/promtail:2.8.0
+          volumes:
+            - /var/log:/var/log
+            - ./promtail-config.yaml:/etc/promtail/config.yaml
+          command: -config.file=/etc/promtail/config.yaml
+          restart: unless-stovery
+    dest: /opt/tools/loki/docker-compose.yml
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Create Promtail configuration for SRV
+  copy:
+    content: |
+      server:
+        http_listen_port: 9080
+        grpc_listen_port: 0
+      positions:
+        filename: /tmp/positions.yaml
+      clients:
+        - url: http://loki:3100/loki/api/v1/push
+      scrape_configs:
+        - job_name: system
+          static_configs:
+            - targets:
+                - localhost
+              labels:
+                job: varlogs
+                __path__: /var/log/*log
+        - job_name: docker
+          static_configs:
+            - targets:
+                - localhost
+              labels:
+                job: docker
+                __path__: /var/lib/docker/containers/*/*-json.log
+    dest: /opt/tools/loki/promtail-config.yaml
+    owner: "{{ system_user }}"
+    group: "{{ system_user }}"
+
+- name: Start Loki stack
+  command: docker-compose up -d
+  args:
+    chdir: /opt/tools/loki
+  become: yes
