@@ -69,3 +69,53 @@ ansible-galaxy install -r requirements.yml
 ```bash
 ansible-playbook -i inventory/production playbooks/setup-infrastructure.yml
 ```
+
+## Ручные действия после развертывания
+#### На Kubernetes master:
+Получите токен для доступа к dashboard:
+
+```bash
+kubectl -n kubernetes-dashboard create token admin-user
+```
+Настройте доступ к кластеру локально:
+
+```bash
+mkdir -p ~/.kube
+scp ubuntu@<master-ip>:~/.kube/config ~/.kube/config
+```
+#### На SRV сервере:
+Настройте GitLab Runner:
+
+```bash
+sudo gitlab-runner register
+```
+#### Настройте мониторинг:
+
+```bash
+# Проверьте доступность Grafana
+curl http://localhost:3000
+```
+Доступ к сервисам
+Kubernetes Dashboard: https://<master-ip>:30443
+
+Grafana: http://<srv-ip>:3000
+
+Prometheus: http://<srv-ip>:9090
+
+#### Безопасность
+Все секреты хранятся в переменных окружения
+
+Используются security groups
+
+SSH доступ только по ключам
+
+Сети изолированы
+
+#### Мониторинг и логи
+Prometheus для метрик
+
+Grafana для визуализации
+
+Loki для логов
+
+Alertmanager для оповещений
